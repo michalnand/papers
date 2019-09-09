@@ -70,11 +70,11 @@ Hyperparmaters of network were choosen as :
     \item L1 and L2 regularization $\lambda _1 = \lambda _2 = 0.0000001$
     \item dropout $0.02$ (only after FC256 layer)
     \item minibatch size 32 for single DQN, 128 for multi DQN
+    \item gradient clip $\langle -10, 10 \rangle$
 \end{itemize}
 
 \newpage
 \section{Results}
-
 
 
 \begin{figure}[htb!]
@@ -91,6 +91,15 @@ Hyperparmaters of network were choosen as :
 
 
 \begin{figure}[htb!]
+\centering
+\includegraphics[width=0.7\textwidth]{results/activity/kernel_features_desc.png}
+\caption{Kernel maximum response inputs visualisation for different networks}
+\end{figure}
+
+
+\iffalse
+
+\begin{figure}[htb!]
     \centering
     \subfloat[Single DQN max activity]{\includegraphics[width=6cm]{results/activity/single_net_max_desc.png}}\hfil
     \subfloat[Multi DQN max activity]{\includegraphics[width=6cm]{results/activity/multi_net0_max_desc.png}}\hfil
@@ -100,7 +109,7 @@ Hyperparmaters of network were choosen as :
 
     \caption{Feature maps activity}\label{img:activity}
 \end{figure}
-
+\fi
 
 
 
