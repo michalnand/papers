@@ -11,7 +11,7 @@
 \usepackage{flushend}
 \usepackage{times}
 \usepackage[margin=1.5cm]{geometry}
-\usepackage[slovak]{babel}
+\usepackage[slovak, english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 
@@ -76,6 +76,23 @@ Hyperparmaters of network were choosen as :
 \newpage
 \section{Results}
 
+First we presents training score progress. The games rewards has been chosen to
+be impossible achieve positive score only by random playing. On figures \ref{img:score_result} we
+can see typical RL training progress - first is agent playing randomly, taking negative rewards.
+After few hundred games the agent finds good strategy and is able to achieve more and more positive
+rewards.
+
+As second part, we focused on learned features visualisation. We processed the maximum kernel response, for
+all networks and all kernels. The inputs for maximum kernel response are presented on figure \ref{img:max_response}.
+Those images are obtained by maximizing kernel response using gradient backpropagation, starting with random input (cite). We
+visualised only convolutional layers.
+
+To compare trained networks for learning similar features we computed correlations between networks (TODO more specify how).
+Considering networks features correlation (Table \ref{tab:networks_correlation}) we assume that
+multi\_net\_0 is learning different features. But we can see strongest correlation with most complicated games - Pacman and Snake,
+and the lowest correlation with the simplest game - Pong \footnote{most/less complicated game - in meaning of input complexity}.
+
+This results leads us to visualise activation heatmap - to understand what are different networks focusing on.
 
 \begin{figure}[htb!]
     \centering
@@ -93,7 +110,7 @@ Hyperparmaters of network were choosen as :
 \begin{figure}[htb!]
 \centering
 \includegraphics[width=0.7\textwidth]{results/activity/kernel_features_desc.png}
-\caption{Kernel maximum response inputs visualisation for different networks}
+\caption{Kernel maximum response inputs visualisation for different networks}\label{img:max_response}
 \end{figure}
 
 
@@ -110,6 +127,26 @@ Hyperparmaters of network were choosen as :
     \caption{Feature maps activity}\label{img:activity}
 \end{figure}
 \fi
+
+
+
+\begin{table}[htb!]
+\begin{tabular}{|l|c|c|c|c|c|c|c|l|}
+\hline
+\textbf{network}       & \textbf{arkanoid} & \textbf{enduro} & \textbf{invaders} & \textbf{pacman} & \textbf{pong} & \textbf{snake} & \textbf{multi\_net\_0} & \textbf{summary} \\ \hline
+\textbf{arkanoid}      & 1.0               & 0.152           & 0.184             & 0.177           & 0.14          & 0.172          & 0.171                  & \textbf{1.9951}  \\ \hline
+\textbf{enduro}        & 0.18              & 1.0             & 0.241             & 0.252           & 0.103         & 0.169          & 0.186                  & \textbf{2.1308}  \\ \hline
+\textbf{invaders}      & 0.189             & 0.205           & 1.0               & 0.203           & 0.112         & 0.164          & 0.16                   & \textbf{2.0330}  \\ \hline
+\textbf{pacman}        & 0.194             & 0.232           & 0.243             & 1.0             & 0.14          & 0.17           & 0.227                  & \textbf{2.2048}  \\ \hline
+\textbf{pong}          & 0.118             & 0.076           & 0.086             & 0.116           & 1.0           & 0.092          & 0.114                  & \textbf{1.6013}  \\ \hline
+\textbf{snake}         & 0.223             & 0.239           & 0.208             & 0.222           & 0.154         & 1.0            & 0.268                  & \textbf{2.3137}  \\ \hline
+\textbf{multi\_net\_0} & 0.166             & 0.171           & 0.155             & 0.207           & 0.127         & 0.202          & 1.0                    & \textbf{2.0283}  \\ \hline
+\end{tabular}
+
+
+\caption{Networks correlation}\label{tab:networks_correlation}
+
+\end{table}
 
 
 
