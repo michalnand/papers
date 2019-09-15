@@ -75,12 +75,12 @@ The last layer with linear activation is directly mapping outputs to Q values. N
 We also tried network without 256 FC layer - to reduce amount of parameters, but the training was much slower \footnote {We are not presenting results, but this require more research - how to reduce number of parameters in DQN and make training faster}.
 
 {\bf DenseNet network architecture}:
-Next tested architecture is DenseNet \cite{bib:densenet_net}. We used four dense blocks. Each dense block consist of four 3x3x32 convolutional layers, one 1x1x32 layer and 2x2 pooling layer.
+Next tested architecture is DenseNet \cite{bib:densenet_net}, multi\_net\_1. We used four dense blocks. Each dense block consist of four 3x3x32 convolutional layers, one 1x1x32 layer and 2x2 pooling layer.
 The main idea is to use state of the art network, which have much bigger capacity and probaly can outperform basic DQN. The main problem can be a lot
 of parameters of this network. Thanks dense connection, the much deeper architecture can be used, and much more complex features can be extracted.
 
 {\bf Spatial Attention CNN network architecture}:
-The last architecture we tested is Spatial Attention CNN, inspired by \cite{bib:cbam}.
+The last architecture we tested is Spatial Attention CNN, inspired by \cite{bib:cbam}, multi\_net\_1.
 The main idea of attention in CNN is to "amplify" some selected featured and present them to next layer.
 Our presented attention module is illustrated on figure \ref{img:spatial_attention_module}.
 Input tensor with dimensions $width \times height \times depth$ is processed in convolution block (with kernel size $3 \times 3 \times depth$).
