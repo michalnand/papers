@@ -63,9 +63,11 @@ As input (game state) into neural network we used raw frame stacking. Our input 
 For action selecting we choosen $\epsilon$-greedy strategy. Starting on $\epsilon = 1$ (total random strategy) exponentialy decreasing to value $\epsilon = 0.1$.
 
 \subsection {Network architecture}
+We used three different architecturec for our experiments : basic CNN, DenseNet and Spatial Attention CNN.
 Following state of the art \cite{bib:vgg_net} and \cite{bib:resnet_net}, we used only 3x3 kernels with stride 1, instead of 8x8 kernels as in \cite{bib:dqn_atari}.
-As activation function the ELU is choosen, with $\alpha = 0.1$. After convolution and pooling layer we used one full connected with 256 units and second
+As activation function the ELU is choosen, with $\alpha = 0.1$. After convolution and pooling layers we used one full connected with 256 units and second
 full connected corresponding to actions count in game. For multi\_nets the amount of units on last layer depends on game with maximum possible actions.
+All network architectures can be seen in table \ref{tab:networks}.
 
 {\bf Basic network architecture}:
 multi\_net\_0 is basic deep Q network - the same as individual games playing networks.
@@ -80,13 +82,13 @@ The main idea is to use state of the art network, which have much bigger capacit
 of parameters of this network. Thanks dense connection, the much deeper architecture can be used, and much more complex features can be extracted.
 
 {\bf Spatial Attention CNN network architecture}:
-The last architecture we tested is Spatial Attention CNN, inspired by \cite{bib:cbam}, multi\_net\_1.
+The last architecture we tested is Spatial Attention CNN, inspired by \cite{bib:cbam}, multi\_net\_2.
 The main idea of attention in CNN is to "amplify" some selected featured and present them to next layer.
 Our presented attention module is illustrated on figure \ref{img:spatial_attention_module}.
 Input tensor with dimensions $width \times height \times depth$ is processed in convolution block (with kernel size $3 \times 3 \times depth$).
 Instead of input features-depth pooling - which is useful in classification attention networks, we are using full features inputs into convolution module (layer).
 After convolution the sigmoid non-linear activation is applied on feature maps. Next block is gating unit, which is using point-wise (Hadamard) product.
-The last step is addition block, which adds original input and attention features - this can be intepreted as ResNet idea. Full network architectures can be seen in table \ref{tab:networks}.
+The last step is addition block, which adds original input and attention features - this can be intepreted as ResNet idea.
 The formal definition can be written in following term
 
 \begin{align}
