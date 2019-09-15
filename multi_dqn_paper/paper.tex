@@ -63,7 +63,7 @@ As input (game state) into neural network we used raw frame stacking. Our input 
 For action selecting we choosen $\epsilon$-greedy strategy. Starting on $\epsilon = 1$ (total random strategy) exponentialy decreasing to value $\epsilon = 0.1$.
 
 \subsection {Network architecture}
-Following state of the art \cite{bib:vgg_net} and \cite{bib:resnet_net}, we used only 3x3 kernels with stride 1, instead of \cite{bib:dqn_atari} 8x8 kernels.
+Following state of the art \cite{bib:vgg_net} and \cite{bib:resnet_net}, we used only 3x3 kernels with stride 1, instead of 8x8 kernels as in \cite{bib:dqn_atari}.
 As activation function the ELU is choosen, with $\alpha = 0.1$. After convolution and pooling layer we used one full connected with 256 units and second
 full connected corresponding to actions count in game. For multi\_nets the amount of units on last layer depends on game with maximum possible actions.
 
