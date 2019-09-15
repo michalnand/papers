@@ -14,6 +14,7 @@
 \usepackage[slovak, english]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{hyperref}
 
 \usepackage{multirow}
 \usepackage{colortbl}
@@ -25,8 +26,8 @@
 
 \begin{document}
 
-\title{Playing multiple games using deep reinforcement learning}
-\author{Michal Chovanec, Ondrej Šuch}
+\title{Playing multiple games using deep reinforcement learning, or Spatial Attention network can play (beat) simultaneously multiple games in reinforcement learning}
+\author{Michal Chovanec, Katarína Jasenčáková, Katarína Bachratá, Hynek Bachratý}
 \date{}
 \maketitle
 \thispagestyle{empty}
@@ -34,9 +35,10 @@
 {\bf Abstract}
 In this paper we presents deep Q network (DQN) playing multiple games with the same weights - six ATARI games.
 We trained network by randomly changing games after several interations, using deep reinforcement learning.
-For comparison, we also trained common DQN. Instead of using 8x8 or 4x4 kernels as in (cite Atari DQN and Doom paper)
-we used only 3x3 kernels, and much lower of feature maps in layers. This network is much more parameter efficient.
-As results we present training score progress and network feature maps usability for each game.
+For comparison, we also trained common DQN (one network per game). Our networks architectures are : basic convolutional neural network (CNN), DenseNet and Spatial Attention CNN.
+Spatial Attention Network was able to outperform both (basic and DenseNet, with much fewer parameters than DenseNet).
+Instead of using 8x8 or 4x4 kernels as in \cite{bib:dqn_atari} and \cite{bib:dqn_doom}  we used only 3x3 kernels, and much lower of feature maps in layers.
+Presented networks are much more parameter and computation cost effective. As results we present training score progress, network feature kernels maps for each game and attention heatmaps.
 
 
 \section{Introduction}
@@ -49,29 +51,105 @@ As results we present training score progress and network feature maps usability
 
 \end{figure}
 
+\newpage
 \section{Experiment setup}
 
-{\bf Network input}:
-Last 4 frames, width = 48, height = 48.
+We choosen 6 Atari games, in 48x48 grid : Arkanoid, Enduro, Invaders, Pacman, Pong and Snake.
+For relevant results, we first trained 6 basic CNN, each for one game. We choosen 1000 games for training and 100 games for testing the final score.
+Then we trained three different architectures (named multi\_net\_0 ... 2). Those networks have different architectures (basic CNN, DenseNet and Spatial Attention CNN).
+During training, the games were randomly changed (after 8192 iterations). Training is finished when there are played 1000 games from all games,.
+As input (game state) into neural network we used raw frame stacking. Our input are last four RGB frames, with size 48x48 pixels. This leads to input tensor dimensions of 48x48x12 or 48x48x3x4 if
+4D tensors are used. Outputs are linear mapped Q values on last network layer.
+For action selecting we choosen $\epsilon$-greedy strategy. Starting on $\epsilon = 1$ (total random strategy) exponentialy decreasing to value $\epsilon = 0.1$.
 
+\subsection {Network architecture}
+Following state of the art \cite{bib:vgg_net} and \cite{bib:resnet_net}, we used only 3x3 kernels with stride 1, instead of \cite{bib:dqn_atari} 8x8 kernels.
+As activation function the ELU is choosen, with $\alpha = 0.1$. After convolution and pooling layer we used one full connected with 256 units and second
+full connected corresponding to actions count in game. For multi\_nets the amount of units on last layer depends on game with maximum possible actions.
 
-{\bf Network architecture}:
-Following state of the art (cite VGG Net, ResNet), we used only 3x3 kernels, instead of (cite Atari DQN, Doom, with 8x8 kernels). As activation
-function the ELU is choosen, with $\alpha = 0.1$.
-After four convolution and pooling layers, the full connected layer with 256 neurons is used.
-On the last layer the linear activation is used. We also tried network without 256 FC layer - to reduce amount of parameters, but the training was much slower.
+{\bf Basic network architecture}:
+multi\_net\_0 is basic deep Q network - the same as individual games playing networks.
+There are four convolutional layers with 32 filters, followed by ELU activation, 2x2 pooling and one 256 units full connected layer.
+The last layer with linear activation is directly mapping outputs to Q values. Number of units on this layer is equal to actions count
+(respectively maximum required actions - in our case it is 5).
+We also tried network without 256 FC layer - to reduce amount of parameters, but the training was much slower \footnote {We are not presenting results, but this require more research - how to reduce number of parameters in DQN and make training faster}.
 
-Proposed network architecture is : \\
-$IN48\times 48\times 12 - C3\times 3\times 32 - P2\times 2 - C3\times 3\times 32 - P2\times 2 - C3\times 3\times 32 - P2\times 2 - C3\times 3\times 32 - P2\times 2 - FC256 - FC_{actions}$
+{\bf DenseNet network architecture}:
+Next tested architecture is DenseNet \cite{bib:densenet_net}. We used four dense blocks. Each dense block consist of four 3x3x32 convolutional layers, one 1x1x32 layer and 2x2 pooling layer.
+The main idea is to use state of the art network, which have much bigger capacity and probaly can outperform basic DQN. The main problem can be a lot
+of parameters of this network. Thanks dense connection, the much deeper architecture can be used, and much more complex features can be extracted.
 
-Hyperparmaters of network were choosen as :
+{\bf Spatial Attention CNN network architecture}:
+The last architecture we tested is Spatial Attention CNN, inspired by \cite{bib:cbam}.
+The main idea of attention in CNN is to "amplify" some selected featured and present them to next layer.
+Our presented attention module is illustrated on figure \ref{img:spatial_attention_module}.
+Input tensor with dimensions $width \times height \times depth$ is processed in convolution block (with kernel size $3 \times 3 \times depth$).
+Instead of input features-depth pooling - which is useful in classification attention networks, we are using full features inputs into convolution module (layer).
+After convolution the sigmoid non-linear activation is applied on feature maps. Next block is gating unit, which is using point-wise (Hadamard) product.
+The last step is addition block, which adds original input and attention features - this can be intepreted as ResNet idea. Full network architectures can be seen in table \ref{tab:networks}.
+The formal definition can be written in following term
+
+\begin{align}
+y = x + x \odot f(x; w, b)
+\end{align}
+
+where \\
+$x$ is input tensor \\
+$y$ is output tensor \\
+$w$, $b$ are kernel weights and bias respectively \\
+$f(x; w)$ is convolution between x and w followed by sigmoid nonliearity.
+
+\begin{figure}[htb!]
+\centering
+\includegraphics[width=0.5\textwidth]{diagrams/spatial_attention.png}
+\caption{Designed spatial attention module}
+\label{img:spatial_attention_module}
+\end{figure}
+
+We choosen the some hyperparameters for all networks. Only difference is minibatch size. For single game playing net we choosen size 32, for multi-nets 128 - to chieve better
+training stability. Summary hyperparameters setup are :
 \begin{itemize}
     \item learning rate $\eta = 0.001$
     \item L1 and L2 regularization $\lambda _1 = \lambda _2 = 0.0000001$
     \item dropout $0.02$ (only after FC256 layer)
     \item minibatch size 32 for single DQN, 128 for multi DQN
     \item gradient clip $\langle -10, 10 \rangle$
+    \item Q-learning discount factor $\gamma = 0.99$
 \end{itemize}
+
+
+
+% Please add the following required packages to your document preamble:
+% \usepackage[table,xcdraw]{xcolor}
+% If you use beamer only pass "xcolor=table" option, i.e. \documentclass[xcolor=table]{beamer}
+\begin{table}[htb!]
+\centering
+\begin{tabular}{|l|l|l|l|}
+\hline
+\textbf{layer} & \textbf{multi\_net\_0}             & \textbf{multi\_net\_1}                    & \textbf{multi\_net\_2}                \\ \hline
+0              & \cellcolor[HTML]{CBCEFB}C3x3x32    & \cellcolor[HTML]{FFCCC9}4 x dense C3x3x32 & \cellcolor[HTML]{CBCEFB}C3x3x32       \\ \hline
+1              & \cellcolor[HTML]{9AFF99}P2x2       & \cellcolor[HTML]{CBCEFB}C1x1x32           & \cellcolor[HTML]{6AFFFA}attention 3x3 \\ \hline
+2              & \cellcolor[HTML]{CBCEFB}C3x3x32    & \cellcolor[HTML]{9AFF99}P2x2              & \cellcolor[HTML]{9AFF99}P2x2          \\ \hline
+3              & \cellcolor[HTML]{9AFF99}P2x2       & \cellcolor[HTML]{FFCCC9}4 x dense C3x3x32 & \cellcolor[HTML]{CBCEFB}C3x3x32       \\ \hline
+4              & \cellcolor[HTML]{CBCEFB}C3x3x32    & \cellcolor[HTML]{CBCEFB}C1x1x32           & \cellcolor[HTML]{6AFFFA}attention 3x3 \\ \hline
+5              & \cellcolor[HTML]{9AFF99}P2x2       & \cellcolor[HTML]{9AFF99}P2x2              & \cellcolor[HTML]{9AFF99}P2x2          \\ \hline
+6              & \cellcolor[HTML]{CBCEFB}C3x3x32    & \cellcolor[HTML]{FFCCC9}4 x dense C3x3x32 & \cellcolor[HTML]{CBCEFB}C3x3x32       \\ \hline
+7              & \cellcolor[HTML]{9AFF99}P2x2       & \cellcolor[HTML]{CBCEFB}C1x1x32           & \cellcolor[HTML]{6AFFFA}attention 3x3 \\ \hline
+8              & \cellcolor[HTML]{FFFC9E}FC 256     & \cellcolor[HTML]{9AFF99}P2x2              & \cellcolor[HTML]{9AFF99}P2x2          \\ \hline
+9              & \cellcolor[HTML]{FFFC9E}FC actions & \cellcolor[HTML]{FFCCC9}4 x dense C3x3x32 & \cellcolor[HTML]{CBCEFB}C3x3x32       \\ \hline
+10             &                                    & \cellcolor[HTML]{CBCEFB}C1x1x32           & \cellcolor[HTML]{6AFFFA}attention 3x3 \\ \hline
+11             &                                    & \cellcolor[HTML]{9AFF99}P2x2              & \cellcolor[HTML]{9AFF99}P2x2          \\ \hline
+12             &                                    & \cellcolor[HTML]{FFFC9E}FC 256            & \cellcolor[HTML]{FFFC9E}FC 256        \\ \hline
+13             &                                    & \cellcolor[HTML]{FFFC9E}FC actions        & \cellcolor[HTML]{FFFC9E}FC actions    \\ \hline
+\end{tabular}
+\caption{Tested networks architectures}
+\label{tab:networks}
+\end{table}
+
+
+
+
+
 
 \newpage
 \section{Results}
@@ -147,6 +225,41 @@ This results leads us to visualise activation heatmap - to understand what are d
 \caption{Networks correlation}\label{tab:networks_correlation}
 
 \end{table}
+
+
+
+
+\newpage
+\begin{thebibliography}{9}
+
+\bibitem{bib:dqn_atari}
+Volodymyr Mnih   Koray Kavukcuoglu   David Silver   Alex Graves   Ioannis AntonoglouDaan Wierstra   Martin Riedmiller.
+Playing Atari with Deep Reinforcement Learning 2013, \url{https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf}
+
+\bibitem{bib:dqn_doom}
+Guillaume Lample, Devendra Singh Chaplot.
+Playing FPS Games with Deep Reinforcement Learning, 2017, \url{https://arxiv.org/abs/1609.05521}
+
+\bibitem{bib:vgg_net}
+Very Deep Convolutional Networks for Large-Scale Image Recognition.
+Karen Simonyan, Andrew Zisserman, 2015, \url{https://arxiv.org/abs/1409.1556}
+
+\bibitem{bib:resnet_net}
+Deep Residual Learning for Image Recognition.
+Kaiming He, Xiangyu Zhang, Shaoqing Ren, Jian Sun, 2015, \url{https://arxiv.org/abs/1512.03385}
+
+\bibitem{bib:densenet_net}
+Densely Connected Convolutional Networks
+Gao Huang, Zhuang Liu, Laurens van der Maaten, Kilian Q. Weinberger, 2017, \url{https://arxiv.org/abs/1608.06993}
+
+
+\bibitem{bib:cbam}
+Woo, Sanghyun and Park, Jongchan and Lee, Joon-Young and So Kweon, In.
+CBAM: Convolutional Block Attention Module 2018, \url{https://eccv2018.org/openaccess/content_ECCV_2018/papers/Sanghyun_Woo_Convolutional_Block_Attention_ECCV_2018_paper.pdf}
+
+
+\end{thebibliography}
+
 
 
 
